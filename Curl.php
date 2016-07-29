@@ -19,6 +19,7 @@ use Yii;
 use yii\base\Exception;
 use yii\helpers\Json;
 use yii\web\HttpException;
+use yii\base\UserException;
 
 /**
  * cURL class
@@ -124,7 +125,7 @@ class Curl
     {
         return $this->_httpRequest('PUT', $url, $raw);
     }
-    
+
       /**
      * Start performing MKCOL-HTTP-Request
      *
@@ -135,7 +136,21 @@ class Curl
      */
     public function mkcol($url, $raw = true)
     {
-        return $this->_httpRequest('MKCOL', $url, $raw);
+        $response = $this->_httpRequest('MKCOL', $url, $raw);
+
+        $p = xml_parser_create();
+        xml_parse_into_struct($p, $response, $vals, $index);
+        xml_parser_free($p);
+        // error_log("VALS: " . json_encode($vals));
+        // error_log("INDEX: " . json_encode($index));
+        // error_log("RESPONSE: " . json_encode($response));
+
+        if ( $response == "" ) {
+          return true;
+        } else {
+          throw new UserException($vals[$index['S:MESSAGE'][0]]['value']);
+          return false;
+        }
     }
 
 
@@ -150,6 +165,37 @@ class Curl
     public function propfind($url, $raw = true)
     {
         return $this->_httpRequest('PROPFIND', $url, $raw);
+    }
+
+
+    public function has($url)
+    {
+
+      $response = $this->propfind($url);
+      $p = xml_parser_create();
+      xml_parse_into_struct($p, $response, $vals, $index);
+      xml_parser_free($p);
+      // error_log("VALS: " . json_encode($vals));
+      // error_log("INDEX: " . json_encode($index));
+      // error_log("RESPONSE: " . json_encode($response));
+
+      if ( array_key_exists('D:STATUS', $index) && strpos($vals[$index['D:STATUS'][0]]['value'], 'OK') !==false) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    public function rename($absSourceUrl, $relativeDest, $host)
+    {
+
+      $response = $this->move($absSourceUrl, $relativeDest, $host, true);
+
+      if ( $response[0] == "HTTP/1.1 201 Created" ) {
+        return true;
+      } else {
+        return false;
+      }
     }
 
 
@@ -182,7 +228,21 @@ class Curl
      */
     public function delete($url, $raw = true)
     {
-        return $this->_httpRequest('DELETE', $url, $raw);
+        $response = $this->_httpRequest('DELETE', $url, $raw);
+
+        $p = xml_parser_create();
+        xml_parse_into_struct($p, $response, $vals, $index);
+        xml_parser_free($p);
+        // error_log("VALS: " . json_encode($vals));
+        // error_log("INDEX: " . json_encode($index));
+        // error_log("RESPONSE: " . json_encode($response));
+
+        if ( $response == "" ) {
+          return true;
+        } else {
+          throw new UserException($vals[$index['S:MESSAGE'][0]]['value']);
+          return false;
+        }
     }
 
 
@@ -381,10 +441,17 @@ class Curl
         Yii::endProfile($method.' '.$url .'#'.md5(serialize($this->getOption(CURLOPT_POSTFIELDS))), __METHOD__);
 
         //check responseCode and return data/status
-        if ($this->getOption(CURLOPT_CUSTOMREQUEST) === 'HEAD') {
+        if ($this->getOption(CURLOPT_CUSTOMREQUEST) === 'MOVE') {
+            // error_log("RESP: " . json_encode($this->response));
+            $this->response = explode("\r\n", $this->response);
+            // error_log('RESP[0]: ' . $this->response[0]);
+            // $raw ? $this->response :
+            return $this->response;
+        }
+        else if ($this->getOption(CURLOPT_CUSTOMREQUEST) === 'HEAD') {
             return true;
         } else {
-            $this->response = $raw ? $this->response : Json::decode($this->response);
+            // $this->response = $raw ? $this->response : Json::decode($this->response);
             return $this->response;
         }
     }
