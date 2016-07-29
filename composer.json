@@ -16,7 +16,7 @@
     },
     "autoload": {
         "psr-4": {
-            "linslin\\yii2\\curl\\": ""
+            "marnold22\\yii2\\curl\\": ""
         }
     }
 }
