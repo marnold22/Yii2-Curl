@@ -124,6 +124,52 @@ class Curl
     {
         return $this->_httpRequest('PUT', $url, $raw);
     }
+    
+      /**
+     * Start performing MKCOL-HTTP-Request
+     *
+     * @param string  $url
+     * @param boolean $raw if response body contains JSON and should be decoded
+     *
+     * @return mixed response
+     */
+    public function mkcol($url, $raw = true)
+    {
+        return $this->_httpRequest('MKCOL', $url, $raw);
+    }
+
+
+    /**
+     * Start performing PROPFIND-HTTP-Request
+     *
+     * @param string  $url
+     * @param boolean $raw if response body contains JSON and should be decoded
+     *
+     * @return mixed response
+     */
+    public function propfind($url, $raw = true)
+    {
+        return $this->_httpRequest('PROPFIND', $url, $raw);
+    }
+
+
+
+    /**
+     * Start performing MOVE-HTTP-Request
+     *
+     * @param string  $url
+     * @param boolean $raw if response body contains JSON and should be decoded
+     *
+     * @return mixed response
+     */
+    public function move($absSourceUrl, $relativeDest, $host, $raw = true)
+    {
+        $this->setOption(CURLOPT_HEADER, true);
+        $this->setOption(CURLOPT_HTTPHEADER, ['Destination: ' . $relativeDest]);
+        $url = $absSourceUrl . ' HTTP/1.1\r\nHost: ' . $host;
+        $this->setOption(CURLOPT_URL, $url);
+        return $this->_httpRequest('MOVE', '', $raw);
+    }
 
 
     /**
